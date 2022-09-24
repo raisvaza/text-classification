@@ -8,9 +8,9 @@ from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score
 
-train = pd.read_csv("data_worthcheck/train.csv")
-test = pd.read_csv("data_worthcheck/test.csv")
-dev = pd.read_csv("data_worthcheck/dev.csv")
+train = pd.read_csv("../data_worthcheck/train.csv")
+test = pd.read_csv("../data_worthcheck/test.csv")
+dev = pd.read_csv("../data_worthcheck/dev.csv")
 
 stopwords_list = set(StopWordRemoverFactory().get_stop_words())
 
