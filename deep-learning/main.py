@@ -5,9 +5,6 @@ import re
 import nltk
 import numpy as np
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
-
-## for deep learning
-# from tensorflow.keras import models, layers, preprocessing as kprocessing
 from tensorflow.python.keras import models, layers, backend as K
 
 train = pd.read_csv("data_worthcheck/train.csv")
@@ -87,18 +84,24 @@ X_dev = dev['text_a'].values
 y_dev = dev['label'].values
 # print(X_dev)
 
-X_train = train['text_a']
-y_train = train['label']
+X_train = train['text_a'].values
+y_train = train['label'].values
 
-X_test = test['text_a']
-y_test = test['label']
+X_test = test['text_a'].values
+y_test = test['label'].values
 
 # PREPROCESS
 for i in range(len(X_dev)):
     X_dev[i] = preprocess(X_dev[i])
+
+for j in range(len(X_train)):
+    X_train[j] = preprocess(X_train[j])
+
+for k in range(len(X_test)):
+    X_test[k] = preprocess(X_test[k])
 # OUTPUT: list of list of token
 # print(X_dev)
-MAX_COLUMN_LENGTH = find_max_length(X_dev)
+MAX_COLUMN_LENGTH = find_max_length(X_train)
 # print(MAX_COLUMN_LENGTH)
 # print(len(pad_sequence(X_dev, MAX_COLUMN_LENGTH)[0]))
 # print(MAX_COLUMN_LENGTH)
@@ -108,14 +111,14 @@ MAX_COLUMN_LENGTH = find_max_length(X_dev)
 import gensim
 
 # word2vec inputs array of array of token
-w2c = gensim.models.word2vec.Word2Vec(sentences=X_dev, min_count=1, vector_size=VECTOR_SIZE)
+w2c = gensim.models.word2vec.Word2Vec(sentences=X_train, min_count=1, vector_size=VECTOR_SIZE)
 # print(w2c.wv['agama'].shape)
 
-for i in range(len(X_dev)):
-    for j in range(len(X_dev[i])):
-        X_dev[i][j] = w2c.wv.key_to_index[X_dev[i][j]]
+for i in range(len(X_train)):
+    for j in range(len(X_train[i])):
+        X_train[i][j] = w2c.wv.key_to_index[X_train[i][j]]
 # print(X_dev)
-X_dev = pad_sequence(X_dev, MAX_COLUMN_LENGTH)
+X_train = pad_sequence(X_train, MAX_COLUMN_LENGTH)
 # print(X_dev)
 
 """
@@ -140,9 +143,9 @@ for word, idx in dic_vocab.items():
     except:
         pass
 
-print(type(X_dev))
-print(type(X_dev[0]))
-print(type(X_dev[0][0]))
+# print(type(X_dev))
+# print(type(X_dev[0]))
+# print(type(X_dev[0][0]))
 
 x_in = layers.Input(shape=(MAX_COLUMN_LENGTH,))
 # print(len(embeddings[0]))
@@ -163,18 +166,18 @@ model = models.Model(x_in, y_out)
 model.compile(loss='sparse_categorical_crossentropy',
               optimizer='adam', metrics=['accuracy'])
 
-# model.summary()
+model.summary()
 
-dic_y_mapping = {n:label for n,label in enumerate(np.unique(y_dev))}
+dic_y_mapping = {n:label for n,label in enumerate(np.unique(y_train))}
 print(dic_y_mapping)
 inverse_dic = {v:k for k,v in dic_y_mapping.items()}
 print(inverse_dic)
-y = np.array([inverse_dic[y] for y in y_dev])
+y = np.array([inverse_dic[y] for y in y_train])
 print(y)
 
-X_dev = np.array([np.array(val) for val in X_dev])
+X_train = np.array([np.array(val) for val in X_train])
 
-training = model.fit(x=X_dev, y=y, batch_size=256, 
+training = model.fit(x=X_train, y=y, batch_size=256, 
                      epochs=10, shuffle=True, verbose=0, 
                      validation_split=0.3)
 
